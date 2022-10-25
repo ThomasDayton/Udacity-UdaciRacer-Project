@@ -74,28 +74,34 @@ async function delay(ms) {
 
 // This async function controls the flow of the race, add the logic and error handling
 async function handleCreateRace() {
-	// render starting UI
-	renderAt('#race', renderRaceStartView())
 
 	// TODO - Get player_id and track_id from the store
   const player_id = store.player_id;
   const track_id = store.track_id;
 	
 	// const race = TODO - invoke the API call to create the race, then save the result
-  	const race = createRace(player_id, track_id);
+  	const race = await createRace(player_id, track_id);
+	console.log(race);
 
 	// TODO - update the store with the race id
-  	store.race_id = race.id;
+  	store.race_id = race.ID - 1;
+
+	// render starting UI
+	renderAt('#race', renderRaceStartView(race.Track, race.Cars))
 
 	// The race has been created, now start the countdown
-	// TODO - call the async function runCountdown
-  	runCountdown();
+	
+	try{
+		// TODO - call the async function runCountdown
+		runCountdown();
+		// TODO - call the async function startRace
+		await startRace(store.race_id);
 
-	// TODO - call the async function startRace
-  	startRace(store.race_id);
-
-	// TODO - call the async function runRace
-  	runRace(store.race_id);
+		// TODO - call the async function runRace
+		await runRace(store.race_id);
+	} catch(err) {
+		console.log("Error-->", err.message);
+	}
 }
 
 function runRace(raceID) {
@@ -150,7 +156,7 @@ async function runCountdown() {
 			// TODO - if the countdown is done, clear the interval, resolve the promise, and return
             if(document.getElementById('big-numbers').innerHTML <= 0){
               clearInterval(countdownInterval);
-              return;
+			  resolve("done");
             }
           }
 		})
@@ -172,7 +178,7 @@ function handleSelectPodRacer(target) {
 	target.classList.add('selected')
 
 	// TODO - save the selected racer to the store
-  	store.player_id = target.id;
+  	store.player_id = parseInt(target.id);
 }
 
 function handleSelectTrack(target) {
@@ -188,7 +194,7 @@ function handleSelectTrack(target) {
 	target.classList.add('selected')
 
 	// TODO - save the selected track id to the store
-  	store.track_id = target.id;
+  	store.track_id = parseInt(target.id);
 	
 }
 
@@ -212,7 +218,7 @@ function renderRacerCars(racers) {
 
 	return `
 		<ul id="racers">
-			${reuslts}
+			${results}
 		</ul>
 	`
 }
@@ -390,8 +396,8 @@ function startRace(id) {
 		method: 'POST',
 		...defaultFetchOpts(),
 	})
-	.then(res => res.json())
-	.catch(err => console.log("Problem with getRace request::", err))
+	//.then(res => res.json())
+	.catch(err => console.log("Problem with startRace request::", err))
 }
 
 function accelerate(id) {
